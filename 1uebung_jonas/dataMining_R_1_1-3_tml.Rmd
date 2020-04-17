@@ -1,0 +1,208 @@
+---
+title: "Exercise Sheet 1 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin"
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d.%m.%Y')`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+install.packages("ggplot2")
+install.packages('knitr', dependencies = TRUE)
+library(ggplot2)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+The exercises are about linear regression. We use the data set `01_heights_weights_genders.csv` which you can download from Moodle. It contains the weight (in american pounds) and height (in inches) of 5000 women and 5000 men.
+
+
+The exercises will help you revise basic concepts of R, do descriptive statistics with visualisations and build linear regression models. Download the data set `01_heights_weights_genders.csv` from Moodle. It contains the weight (in american pounds) and height (in inches) of people. 
+R comes with many functions for data visualisation like `plot`, `hist` and `boxplot`, however I recommend to have a look at other graphing libraries that are more powerful, flexible and produce better looking graphs, in particular *ggplot2*. Install it once with `install.packages("ggplot2")` and load it with `library(ggplot2)` whenever you start a new R session. 
+
+A good starting point for using *ggplot2* is the [Cookbook for R](http://www.cookbook-r.com), specifically Section 8 on [Graphs](http://www.cookbook-r.com/Graphs/). A link to the more comprehensive book *R Graphics Cookbook* by Winston Chang can be found on the same page. 
+
+Other useful graphing packages include *lattice* and *plotly*. 
+
+
+## Exercise 1.1
+
+a) Import the data using the function `read.csv()` and assign it to a variable called `weight_df` (a data frame) using the following code fragment. You may have to specify the path of the file. 
+    ```{r, eval=FALSE}
+    weight_df  <- read.csv("./01_heights_weights_genders.csv")
+    ```
+b) Explore the data frame `weight_df` using functions like `str()`, `dim()`, `names()`, `head()` and `View()`. How many columns has the data, what are the column names, how many rows, what are the data types etc?
+c) Scale the columns for *height* and *weight* to use metric measures *cm* and *kg*: use *1 inch = 2.54 cm* and *1 kg = 2.2 pound*. Hint: A column in a data frame can be addressed using e.g. `weight_df$Height`. Please remember that R distinguishes upper and lower case. 
+d) Explore the value ranges of the scaled columns *height* and *weight* using `summary()`, box plots and histograms. Distinguish between men and women. Hint: Subsets can be produced using `subset(weight_df, Gender == "Male")` or `weight_df[weight_df$Gender == "Male",]`. Alternatively, `Gender` can be used to define the colour in a plot.  
+e) Produce a scatter plot with *height* on the x-axis and *weight* on the y-axis. Add descriptive labels to all the axes and give it a title. Again distinguish between men and women using separate plots or use colour. 
+
+
+## Exercise 1.2
+
+a) Find out how to build a linear regression model using the function `lm()` (also see the example in b).  
+b) Build linear models of the data using *height* as input (independent variable) and *weight* as output (dependent variable) for men, women and all. Assign the result to the variables `weight_lm_m`, `weight_lm_f`, `weight_lm_all`. Example:
+c) Explore the data structures `weight_lm_x`, e.g. use `names(weight_lm_x)` to learn about the columns (with `x` being one of `m`, `f`, `all`). Refer to the help pages of `lm` to find out what they mean.  
+d) Add the regression lines to the scatter plots from Exercise 1 e). If you used the basic `plot` function in Exercise 1.1 e) give `abline(weight_lm_x, col="red")` a try and look at the help pages for more information. `ggplot2` offers quite convenient functions for linear regression lines as well.  
+e) Compare the three regression lines and interpret the differences.  
+
+## Exercise 1.3
+
+a) Use `summary(weight_lm_x)` to explore the three linear models:
+    * their residuals 
+    * the coefficients of the model with standard error, t- and p-values of the statistical hypothesis test
+    * residual standard error and R-squared (squared correlation)
+    Interpret the p-values in terms of rejecting or not rejecting the null hypothesis of a parameter being zero.  
+b) Look at the confidence intervals of the linear models using `confint()`. Change the confidence levels from the default 0.95, see how the confidence intervals change and explain why (use the parameter `level = ...`).
+
+
+
+## Solutions
+
+### Exercise 1.1a
+
+```{r}
+weight_df  <- read.csv("01_heights_weights_genders.csv")
+```
+
+
+
+### Exercise 1.1b
+
+```{r}
+head(weight_df)
+names(weight_df)
+dim(weight_df)
+str(weight_df)
+# columns = 3 (gender, height, weight)
+# rows = 1000
+# data types = (height, num; gender, categorical; weight, num)
+```
+
+### Exercise 1.1c
+
+```{r}
+weight_df$Height <- weight_df$Height * 2.54
+# TASK: transform weight into kg accordingly
+weight_df$Weight <- weight_df$Weight * 2.2
+```
+
+### Exercise 1.1d
+
+```{r}
+weight_df_m <- weight_df[weight_df$Gender == "Male",]
+
+# TASK: do the same for women's data 
+weight_df_f <- weight_df[weight_df$Gender == "Female",]
+
+boxplot(weight_df_f$Height, weight_df_m$Height, names = c("women", "men"), main = "height")
+hist(weight_df_f$Height, main = "histogram of women's height", xlab = "women's height")
+hist(weight_df_m$Height, main = "histogram of men's height", xlab = "men's height")
+
+# TASK: do the same for Weight
+boxplot(weight_df_f$Weight, weight_df_m$Weight, names = c("women", "men"), main = "weight")
+hist(weight_df_f$Weight, main = "histogram of women's weight", xlab = "women's weight")
+hist(weight_df_m$Weight, main = "histogram of men's weight", xlab = "men's weight")
+
+# These are alternative versions using ggplot2
+library(ggplot2)
+ggplot(weight_df, aes(x=Gender, y=Weight, fill=Gender)) + 
+  geom_boxplot()
+
+ggplot(weight_df, aes(x=Gender, y=Height, fill=Gender)) + 
+  geom_boxplot()
+
+
+ggplot(weight_df, aes(x=Weight, fill=Gender)) +
+    geom_histogram(binwidth=.5, alpha=.5, position="identity")
+
+ggplot(weight_df, aes(x=Height, fill=Gender)) +
+    geom_histogram(binwidth=.5, alpha=.5, position="identity")
+
+
+```
+
+### Exercise 1.1e
+```{r}
+plot(weight_df$Height, weight_df$Weight, col = weight_df$Gender, 
+     main = "height over weight; red: men, black: women", xlab = "height", ylab = "weight")
+```
+
+### Exercise 1.2b
+
+```{r}
+weight_lm_all <- lm(Weight ~ Height, data = weight_df)
+
+# TASK: do the same for weight_df_f and weight_df_m
+weight_lm_f <- lm(Weight ~ Height, data = weight_df_f)
+weight_lm_m <- lm(Weight ~ Height, data = weight_df_m)
+weight_lm_f
+weight_lm_m
+```
+
+### Exercise 1.2c
+
+```{r}
+# TASK
+names(weight_lm_f)
+names(weight_lm_m)
+names(weight_lm_all)
+help(lm)
+```
+
+### Exercise 1.2d
+
+```{r}
+plot(weight_df$Height, weight_df$Weight, col = weight_df$Gender, 
+     main = "height over weight; red: men, black: women", xlab = "height", ylab = "weight")
+abline(weight_lm_f, col="blue")
+abline(weight_lm_m, col="blue")
+abline(weight_lm_all, col="green")
+
+ggplot(weight_df, aes(x=Height, y=Weight, color=Gender)) + geom_point(shape=1) +
+    scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+    geom_smooth(method=lm,   # Add linear regression lines
+                se=FALSE,    # Don't add shaded confidence region
+                fullrange=TRUE) # Extend regression lines
+
+?abline
+weight_lm_all
+```
+
+### Exercise 1.2e
+Compare the three regression lines in 1.2d and interpret the differences. 
+
+Distributions look very similar. The male distribution is shifted more to the right and top. This is due to the general idea that men are larger and weigh more compared
+to women. It is no surprise that the regression lines (male, female) are therefore parrallel to each other. Again the male line is above the female line because of
+the general idea that men are larger and weigh more compared to women. Coming to the regression line which refers to all data we can see that it has a higher rate of increase.
+
+### Exercise 1.3a
+a) Use `summary(weight_lm_x)` to explore the three linear models:
+    * their residuals 
+    * the coefficients of the model with standard error, t- and p-values of the statistical hypothesis test
+    * residual standard error and R-squared (squared correlation)
+    Interpret the p-values in terms of rejecting or not rejecting the null hypothesis of a parameter being zero.  
+```{r}
+summary(weight_lm_f)
+summary(weight_lm_m)
+summary(weight_lm_all)
+```
+
+Assuming that alpha = 0,05:
+- weight_lm_f we reject the null hypothesis. 2e-16
+- weight_lm_m we reject the null hypothesis. 2e-16
+weight_lm_all we reject the null hypothesis. 2e-16
+
+### Exercise 1.3b
+b) Look at the confidence intervals of the linear models using `confint()`. Change the confidence levels from the default 0.95, see how the confidence intervals change and explain why (use the parameter `level = ...`).
+
+```{r}
+confint(weight_lm_f)
+confint(weight_lm_m)
+confint(weight_lm_all)
+
+confint(weight_lm_all, level=0.9)
+confint(weight_lm_all, level=0.8)
+confint(weight_lm_all, level=0.7)
+```

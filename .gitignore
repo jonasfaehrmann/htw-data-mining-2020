@@ -3,6 +3,7 @@
 # Edit at https://www.gitignore.io/?templates=jupyternotebooks
 
 .DS_Store
+.history
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
