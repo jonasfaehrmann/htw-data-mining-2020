@@ -97,8 +97,14 @@ weight_df_m <- weight_df[weight_df$Gender == "Male",]
 weight_df_f <- weight_df[weight_df$Gender == "Female",]
 
 boxplot(weight_df_f$Height, weight_df_m$Height, names = c("women", "men"), main = "height")
+# NOTES
+# Women are smaller then men. Median is the thick line in the middle of the box. The box contains 25% to 75% of the data. Above and below is the rest.
 hist(weight_df_f$Height, main = "histogram of women's height", xlab = "women's height")
 hist(weight_df_m$Height, main = "histogram of men's height", xlab = "men's height")
+# NOTES
+# Look if we have Ausreißer? Methods to handle them:
+# - Look at boxplot and delete all above the top or bottom second line
+# - Also check visually (human cant be 3m tall)
 
 # TASK: do the same for Weight
 boxplot(weight_df_f$Weight, weight_df_m$Weight, names = c("women", "men"), main = "weight")
@@ -120,7 +126,6 @@ ggplot(weight_df, aes(x=Weight, fill=Gender)) +
 ggplot(weight_df, aes(x=Height, fill=Gender)) +
     geom_histogram(binwidth=.5, alpha=.5, position="identity")
 
-
 ```
 
 ### Exercise 1.1e
@@ -133,6 +138,8 @@ plot(weight_df$Height, weight_df$Weight, col = weight_df$Gender,
 
 ```{r}
 weight_lm_all <- lm(Weight ~ Height, data = weight_df)
+# NOTE
+# Weight is abhängig and Height unabhängig
 
 # TASK: do the same for weight_df_f and weight_df_m
 weight_lm_f <- lm(Weight ~ Height, data = weight_df_f)
@@ -173,9 +180,12 @@ weight_lm_all
 ### Exercise 1.2e
 Compare the three regression lines in 1.2d and interpret the differences. 
 
+Steigung = Wie viel schwerer wird eine Person pro Zentimeter
 Distributions look very similar. The male distribution is shifted more to the right and top. This is due to the general idea that men are larger and weigh more compared
-to women. It is no surprise that the regression lines (male, female) are therefore parrallel to each other. Again the male line is above the female line because of
+to women. It is no surprise that the regression lines (male, female) are therefore parrallel to each other (weight increases at the same rate per centimeter). Again the male line is above the female line because of
 the general idea that men are larger and weigh more compared to women. Coming to the regression line which refers to all data we can see that it has a higher rate of increase.
+
+Als Vorhersagemodell ist die Regressionslinie der männlichen und weiblichen am besten. Das gemischte ist allgemeiner
 
 ### Exercise 1.3a
 a) Use `summary(weight_lm_x)` to explore the three linear models:
@@ -206,3 +216,6 @@ confint(weight_lm_all, level=0.9)
 confint(weight_lm_all, level=0.8)
 confint(weight_lm_all, level=0.7)
 ```
+NOTE
+Konfidenzintervall = Wahrscheinlichkeit, dass der echt Wert innerhalb von level liegt. Also bspw. 0,9
+Je höher desto sicherer!
