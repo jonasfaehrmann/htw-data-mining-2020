@@ -1,0 +1,168 @@
+---
+title: "Exercise Sheet 2 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin"
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d %B %Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+The exercises are about multiple linear regression. The data in `miete03.asc` has kindly been provided by the Institute for Statistics at the University of Munich. Import the data set into R using 
+
+```{r}
+mietspiegel <- read.table("2uebung_jonas/miete03.asc", header = TRUE)
+mietspiegel
+```
+
+The data description:
+
+* `nm`:	Net rent in EUR
+* `nmqm`:	Net rent per m² in EUR
+* `wfl`:	Floor space in m²
+* `rooms`:	Number of rooms in household
+* `bj`:	Year of construction
+* `bez`:	Urban district
+* `wohngut`:	Good residential area? (Y=1,N=0)
+* `wohnbest`:	Very good residential area? (Y=1,N=0)
+* `ww0`:	Hot water supply? (Y=0,N=1)
+* `zh0`:	Central heating? (Y=0,N=1)
+* `badkach0`:	Tiled bathroom? (Y=0,N=1)
+* `badextra`:	Supplementary equipment in bathroom? (Y=1,N=0)
+* `kueche`:	Well equipped kitchen? (Y=1,N=0)
+
+The aim of building a linear regression model is to estimate the rent of an accommodation (house/flat) based on data. 
+
+## Exercise 2.1
+
+a) Explore the data set using `summary()` and `View()`. Note that `View()` does not work when you compile (knit) a RMarkdown document, but only in RStudio.
+b) Plot the data using `pairs()`, i.e. a matrix of pairwise scatter plots of the variables. Interpret the results.
+c) Compute the correlation matrix and show the lower half only for better readability. What do the numbers tell us?
+    ```{r}
+      miet_cor <- cor(mietspiegel)
+      miet_cor[upper.tri(miet_cor, diag = FALSE)] <- NA
+      miet_cor
+    ```   
+    Be aware that `cor()` uses Pearson correlation as a default, which is only sensible for metric features. In particular, it does not make sense for nominal features like `bez` (district). It can be used on binary features like `wohngut` that have an order (Y=1 is better than N=0). We will discuss these issues in the lectures. 
+d) Build a multiple linear regression model `miet_lm` with `nm` (*Nettomiete*) as target (output) variable and all the others as predictors (input variables). 
+e) Explore the model using `summary()`. Try to make sense of  
+    i) the residuals
+    ii) the value of the coefficients
+    iii) the p-value $Pr(>|t|)$ of the coefficients
+    iv) R-squared
+    v) the F-statistic and its p-value
+f) Why are some of the coefficients in the model negative? Does that make sense? Refer to the data description above for help.
+
+
+## Exercise 2.2
+
+Think about the following scenario. You would like to buy a flat. You gather data about it through a viewing and information from the estate agent. You want to use the data to estimate the price of the flat. For that purpose you build a multiple linear regression model.  
+
+a) Revisit the predictor (input) variables in your model from Exercise 2.1. Should we use all of them? Do we know all of them in our scenario? 
+b) Rebuilt the linear model without the one predictor variable we do not know in our scenario. Compare the model with the one including all predictors. 
+c) Interpret the coefficient of the variable `bez` describing the district of Munich. Does this make sense? Check out the data description. 
+d) Use the function `factor()` to change the variable `bez`. What does this do? Re-build the model. Compare the model with the previous one and interpret the differences. Look at the values of the coefficients for `bez`. 
+
+## Exercise 2.3
+
+What does the following code fragment do? Explain the value of R-squared and make the link to Exercise 2.2a.
+```{r}
+mietspiegel_lm <- lm(nm ~ nmqm:wfl, mietspiegel)
+summary(mietspiegel_lm)
+```
+
+
+
+## Solutions
+
+### Exercise 2.1a
+```{r}
+summary(mietspiegel)
+# View(mietspiegel) # this does not work in RMarkdown, only in RStudio
+head(mietspiegel)
+```
+
+### Exercise 2.1b
+```{r}
+# plot pairwise scatter plots; sample 500 points only to reduce complexity
+pairs(mietspiegel[sample(1:2053, 500),], cex = 0.1)
+
+# Net rent (nm) and floor space (wfl) in qm correlate
+# Very good residential area (wohnbest) does have high rent (n), high net rent per m2 (nmqm)
+# Good ressidential area (wohngut) does have both sides (high rent, low rent, etc.)
+# Most newer apartments lay in a specific range of net rent (nm). Very old buildings have the full range
+```
+Do we see something interesting?
+
+### Exercise 2.1c
+Be aware of the feature types when computing correlation. The function `cor()` uses *Pearson* correlation as default which is suitable for metric features like `nm` and `nmqm`. If we assume that each additional room adds the same to the rent, then *Pearson* correlation can be used to correlate a metric feature like `nm` with `rooms`. However, generally either *Kendall's* or *Spearman's* rank correlations are used for ordinal features like `rooms`. These are available through the parameter `method =` in the function `cor()`. Check the help pages for more information. 
+
+You can see that *Pearson's* and *Spearman's* correlations often give similar results for ordered features like `rooms`. This is also true for binary features like `badextra`. To investigate the relationship between a binary (or any nominal feature) and metric feature, you can also compare boxplots or the confidence intervals of average values.  
+
+```{r}
+library(ggplot2)
+cor(mietspiegel$nm, mietspiegel$rooms, method = c("pearson")) 
+cor(mietspiegel$nm, mietspiegel$rooms, method = c("kendall"))
+cor(mietspiegel$nm, mietspiegel$rooms, method = c("spearman"))
+
+cor(mietspiegel$nm, mietspiegel$badextra , method = c("pearson"))
+cor(mietspiegel$nm, mietspiegel$badextra, method = c("kendall")) # you want this one 
+cor(mietspiegel$nm, mietspiegel$badextra, method = c("spearman")) # or this one
+
+ggplot(mietspiegel, aes(x=badextra, y=nm, group=badextra)) + # or this one
+  geom_boxplot()
+```
+
+
+### Exercise 2.1d/e
+d) Build a multiple linear regression model `miet_lm` with `nm` (*Nettomiete*) as target (output) variable and all the others as predictors (input variables). 
+```{r}
+# try all features
+# note use of the dot operator `.` representing all remaining variables
+mietspiegel_lm <- lm(nm ~ ., data = mietspiegel)
+summary(mietspiegel_lm)
+```
+Explore the meaning of the R output above.
+i) the residuals
+ii) the value of the coefficients
+iii) the p-value $Pr(>|t|)$ of the coefficients
+iv) R-squared
+v) the F-statistic and its p-value
+
+### Exercise 2.1f
+f) Why are some of the coefficients in the model negative? Does that make sense? Refer to the data description above for help.
+
+
+
+### Exercise 2.2a
+`nmqm` is usually not known. 
+
+### Exercise 2.2b
+
+```{r}
+# remove nmqm; note the use of `-nmqm`
+mietspiegel_lm2 <- lm(nm ~ .-nmqm, data = mietspiegel)
+summary(mietspiegel_lm2)
+```
+Compare the quality of this model with the one including `nmqm` and explain the differences. 
+
+
+### Exercise 2.2c
+ 
+
+### Exercise 2.2d
+
+```{r}
+mietspiegel$bez_fact <- factor(mietspiegel$bez)
+mietspiegel_lm3 <- lm(nm ~ .-nmqm-bez, data = mietspiegel)
+summary(mietspiegel_lm3)
+```
+Compare the quality of this model with the one using the original column `bez`.
+
+### Exercise 2.3
+
+

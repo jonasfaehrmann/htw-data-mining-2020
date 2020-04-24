@@ -1,0 +1,326 @@
+---
+title: "Exercise Sheet 1 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin"
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d.%m.%Y')`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+The exercises are about linear regression. We use the data set `01_heights_weights_genders.csv` which you can download from Moodle. It contains the weight (in american pounds) and height (in inches) of 5000 women and 5000 men.
+
+
+The exercises will help you revise basic concepts of R, do descriptive statistics with visualisations and build linear regression models. Download the data set `01_heights_weights_genders.csv` from Moodle. It contains the weight (in american pounds) and height (in inches) of people. 
+R comes with many functions for data visualisation like `plot`, `hist` and `boxplot`, however I recommend to have a look at other graphing libraries that are more powerful, flexible and produce better looking graphs, in particular *ggplot2*. Install it once with `install.packages("ggplot2")` and load it with `library(ggplot2)` whenever you start a new R session. 
+
+A good starting point for using *ggplot2* is the [Cookbook for R](http://www.cookbook-r.com), specifically Section 8 on [Graphs](http://www.cookbook-r.com/Graphs/). A link to the more comprehensive book *R Graphics Cookbook* by Winston Chang can be found on the same page. 
+
+Other useful graphing packages include *lattice* and *plotly*. 
+
+
+## Exercise 1.1
+
+a) Import the data using the function `read.csv()` and assign it to a variable called `weight_df` (a data frame) using the following code fragment. You may have to specify the path of the file. 
+    ```{r, eval=FALSE}
+    weight_df  <- read.csv("01_heights_weights_genders.csv")
+    ```
+b) Explore the data frame `weight_df` using functions like `str()`, `dim()`, `names()`, `head()` and `View()`. How many columns has the data, what are the column names, how many rows, what are the data types etc?   
+c) Scale the columns for *height* and *weight* to use metric measures *cm* and *kg*: use *1 inch = 2.54 cm* and *1 kg = 2.2 pound*. Hint: A column in a data frame can be addressed using e.g. `weight_df$Height`. Please remember that R distinguishes upper and lower case.  
+d) Explore the value ranges of the scaled columns *height* and *weight* using `summary()`, box plots and histograms. Distinguish between men and women. Hint: Subsets can be produced using `subset(weight_df, Gender == "Male")` or `weight_df[weight_df$Gender == "Male",]`. Alternatively, `Gender` can be used to define the colour in a plot.  
+e) Produce a scatter plot with *height* on the x-axis and *weight* on the y-axis. Add descriptive labels to all the axes and give it a title. Again distinguish between men and women using separate plots or use colour. 
+
+
+## Exercise 1.2
+
+a) Find out how to build a linear regression model using the function `lm()` (also see the example in b).  
+b) Build linear models of the data using *height* as input (independent variable) and *weight* as output (dependent variable) for men, women and all. Assign the result to the variables `weight_lm_m`, `weight_lm_f`, `weight_lm_all`. Example:
+```{r, eval = FALSE}
+weight_lm_all <- lm(Weight ~ Height, data = weight_df)
+```
+c) Explore the data structures `weight_lm_x`, e.g. use `names(weight_lm_x)` to learn about the columns (with `x` being one of `m`, `f`, `all`). Refer to the help pages of `lm` to find out what they mean.  
+d) Add the regression lines to the scatter plots from Exercise 1 e). If you used the basic `plot` function in Exercise 1.1 e) give `abline(weight_lm_x, col="red")` a try and look at the help pages for more information. `ggplot2` offers quite convenient functions for linear regression lines as well.  
+e) Compare the three regression lines and interpret the differences.  
+
+## Exercise 1.3
+
+a) Use `summary(weight_lm_x)` to explore the three linear models:
+    * their residuals 
+    * the coefficients of the model with standard error, t- and p-values of the statistical hypothesis test
+    * residual standard error and R-squared (squared correlation)
+    Interpret the p-values in terms of rejecting or not rejecting the null hypothesis of a parameter being zero.  
+b) Look at the confidence intervals of the linear models using `confint()`. Change the confidence levels from the default 0.95, see how the confidence intervals change and explain why (use the parameter `level = ...`).
+
+## Exercise 1.4
+a) Focus on either the data for women or for men and pick smaller subsets to investigate how the sample size influences the confidence intervals of the coefficients. Use `sample()` with different sample sizes to select subsets of the data, rerun `lm()` and check the confidence intervals.  
+b) Use `ggplot` to visualise the differences in a). For instance, for a sample called `weight_df_m_50` you can use the following plot command:
+    ```{r, eval=FALSE}
+    library(ggplot2)
+    ggplot(weight_df_m_50, aes(x=Height, y=Weight)) + geom_point(shape=1) +
+        geom_smooth(method=lm,   # Add linear regression lines
+                    level = 0.95,    # add shaded confidence region at level 0.95
+                    fullrange=TRUE) # Extend regression lines
+    ```
+    Compare the graphs of different sample sizes and also vary the confidence level using the parameter `level`.  
+c) Pick a sample of 100 points from the data as in a) and select another sample of 100 points, where you restrict the height to [165,175]. Build linear regression models and again compare the confidence intervals using `confint()` or plots as in b). Interpret the differences.
+
+## Exercise 1.5
+a) Extract the linear regression coefficients from the models for men and women using the function `coef()`.  
+b) Use the coefficients to assemble the linear functions and use them to predict the weight of a man and of a woman for the heights 160cm and 170cm.  
+c) Use the function `predict.lm()' to re-calculate the manual predictions from b).   
+d) Extend the prediction by adding estimation intervals, i.e. the *confidence interval* and the *prediction interval* using the argument `interval = ...` in `predict.lm()`. Observe the difference in size of the two intervals and explain why that is. What are the two intervals estimating? 
+
+## Exercise 1.6
+a) Include *gender* as an input to the regression on the full data set (women and men).  
+b) Compare the quality of the extended model and the simpler model without *gender*.  
+c) Compare the coefficients of the extended regression with those of the models for females, males and all. Interpret the difference. 
+
+
+
+
+## Solutions
+
+### Exercise 1.1a
+
+```{r}
+weight_df  <- read.csv("01_heights_weights_genders.csv")
+```
+
+
+
+### Exercise 1.1b
+
+```{r}
+head(weight_df)
+names(weight_df)
+dim(weight_df)
+str(weight_df)
+```
+
+### Exercise 1.1c
+
+```{r}
+weight_df$Height <- weight_df$Height * 2.54
+weight_df$Weight <- weight_df$Weight / 2.2
+```
+
+### Exercise 1.1d
+
+```{r}
+weight_df_m <- weight_df[weight_df$Gender == "Male",]
+weight_df_f <- weight_df[weight_df$Gender == "Female",]
+boxplot(weight_df_f$Height, weight_df_m$Height, names = c("women", "men"), main = "height")
+boxplot(weight_df_f$Weight, weight_df_m$Weight, names = c("women", "men"), main = "weight")
+hist(weight_df_f$Height, main = "histogram of women's height", xlab = "women's height")
+hist(weight_df_m$Height, main = "histogram of men's height", xlab = "men's height")
+hist(weight_df_f$Weight, main = "histogram of women's weight", xlab = "women's weight")
+hist(weight_df_m$Weight, main = "histogram of men's weight", xlab = "men's weight")
+
+library(ggplot2)
+ggplot(weight_df, aes(x=Gender, y=Weight, fill=Gender)) + 
+  geom_boxplot()
+
+ggplot(weight_df, aes(x=Gender, y=Height, fill=Gender)) + 
+  geom_boxplot()
+
+
+ggplot(weight_df, aes(x=Weight, fill=Gender)) +
+    geom_histogram(binwidth=.5, alpha=.5, position="identity")
+
+ggplot(weight_df, aes(x=Height, fill=Gender)) +
+    geom_histogram(binwidth=.5, alpha=.5, position="identity")
+
+
+```
+
+### Exercise 1.1e
+```{r}
+plot(weight_df$Height, weight_df$Weight, col = weight_df$Gender, 
+     main = "height over weight; red: men, black: women", xlab = "height", ylab = "weight")
+```
+
+### Exercise 1.2b
+
+```{r}
+weight_lm_m <- lm(Weight ~ Height, data = weight_df_m)
+weight_lm_f <- lm(Weight ~ Height, data = weight_df_f)
+weight_lm_all <- lm(Weight ~ Height, data = weight_df)
+```
+
+### Exercise 1.2c
+
+```{r}
+?lm
+names(weight_lm_all)
+```
+
+### Exercise 1.2d
+
+```{r}
+plot(weight_df$Height, weight_df$Weight, col = weight_df$Gender, 
+     main = "height over weight; red: men, black: women", xlab = "height", ylab = "weight")
+abline(weight_lm_f, col="blue")
+abline(weight_lm_m, col="blue")
+abline(weight_lm_all, col="green")
+
+ggplot(weight_df, aes(x=Height, y=Weight, color=Gender)) + geom_point(shape=1) +
+    scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+    geom_smooth(method=lm,   # Add linear regression lines
+                se=FALSE,    # Don't add shaded confidence region
+                fullrange=TRUE) # Extend regression lines
+
+
+?abline
+weight_lm_all
+```
+
+
+### Exercise 1.3a
+
+```{r}
+summary(weight_lm_m)
+summary(weight_lm_f)
+summary(weight_lm_all)
+```
+The probability (p-values) of seeing the t-values under the null hypothesis are very small. Therefore the null hypothesis is rejected in all three models for both coefficients, i.e. the both coefficients are significantly different from zero.  
+
+### Exercise 1.3b
+
+```{r}
+confint(weight_lm_m)
+confint(weight_lm_f)
+confint(weight_lm_all)
+```
+The confidence intervals do not contain zero, which is equivalent to the t-values being beyond the thresholds in 3a). 
+
+```{r}
+confint(weight_lm_m, level = 0.95)
+confint(weight_lm_m, level = 0.99)
+confint(weight_lm_m, level = 0.90)
+```
+The higher the confidence level the larger the interval. In other words: if we want to have higher confidence that a value is in an interval then the interval needs to be larger. 
+
+### Exercise 1.4a
+```{r}
+no_of_rows <- nrow(weight_df_m)
+
+# take a sample of 50 points 
+weight_df_m_50 <- weight_df_m[sample(1:no_of_rows, 50),]
+
+# build the linear model
+weight_lm_m_50 <- lm(Weight ~ Height, data = weight_df_m_50)
+
+# look at the confidence interval
+conf_50 <- confint(weight_lm_m_50)
+conf_50
+
+# TASK: do the same for larger samples like 100 and 500
+#   and compare the confidence intervals: 
+#   Explain the influence of sample size on the size of the interval
+
+
+```
+
+
+### Exercise 1.4b
+```{r}
+ggplot(weight_df_m_50, aes(x=Height, y=Weight)) + geom_point(shape=1) +
+    geom_smooth(method=lm,   # Add linear regression lines
+                level = 0.95,    # add shaded confidence region
+                fullrange=TRUE) + # Extend regression lines
+      geom_abline(slope=conf_50[2,2], intercept=conf_50[1,1]) +
+    geom_abline(slope=conf_50[2,1], intercept=conf_50[1,2])
+```
+In addition to the confidence interval (grey band) around the regression line I have added two regression lines to this plot as extremes within the confidence interval. Look at the code to see how I constructed them using the extreme intercepts and slopes in the confidence interval. This gives you a good idea of how much the regression line can vary given the uncertainty in the data set. 
+
+```{r}
+# TASK: do the same for the other two samples and compare
+
+```
+
+
+### Exercise 1.4c
+
+```{r}
+# pick a sample of the data limited by a small interval of height 
+weight_df_m_limited_height <- subset(weight_df_m, Height >= 165 & Height <= 175)
+weight_df_m_limited_height_100 <- weight_df_m_limited_height[
+  sample(1:nrow(weight_df_m_limited_height), 100),]
+
+# TASK: compute a linear model 
+weight_lm_m_limited_height_100 <- 
+
+# TASK: compare the confidence intervals and plots
+confint(weight_lm_m_100)
+confint(weight_lm_m_limited_height_100)
+
+ggplot(weight_df_m_100, aes(x=Height, y=Weight)) + geom_point(shape=1) +
+    geom_smooth(method=lm,   # Add linear regression lines
+                level = 0.95,    # add shaded confidence region
+                fullrange=TRUE) + # Extend regression lines
+    xlim(min(weight_df$Height), max(weight_df$Height))
+  
+ggplot(weight_df_m_limited_height_100 ...
+
+```
+
+### Exercise 1.5a
+```{r}
+# TASK: complete
+coef_m <- 
+coef_m
+
+coef_f <- 
+coef_f 
+```
+
+### Exercise 1.5b
+```{r}
+# TASK: complete
+
+```
+
+### Exercise 1.5c
+```{r}
+predict(weight_lm_m, data.frame(Height=c(160, 170)))
+
+# TASK: the same for women
+
+```
+
+### Exercise 1.5d
+```{r}
+predict(weight_lm_f, data.frame(Height=c(160, 170)), interval = "prediction")
+predict(weight_lm_f, data.frame(Height=c(160, 170)), interval = "confidence")
+
+# TASK: the same for men and compare
+
+```
+
+As with any confidence or prediction interval, its width depends on the chosen confidence level which is set to $0.95$ as default. You can change it using `level = ...` as an argument in the function `predict()`. Play around with different levels to see how the width of the interval changes. 
+
+### Exercise 1.6a
+```{r}
+# TASK: complete
+weight_lm_gender <- lm(...)
+summary(weight_lm_gender)
+```
+
+### Exercise 1.6b
+```{r}
+summary(weight_lm_all)
+```
+Compare the values to the equivalent ones of the other models. 
+
+### Exercise 1.6c
+```{r}
+# TASK: compare the values of the coefficients of all models
+
+```
+
+
+
