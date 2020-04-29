@@ -183,8 +183,11 @@ weight_lm_all
 
 ```{r}
 summary(weight_lm_m)
-summary(weight_lm_f)
-summary(weight_lm_all)
+summary(weight_lm_f) 
+# NOTE= Standard error : im Schnitt einen Kilogramm besser als weigth_lm_all
+# NOTE= Quality of prediction: r-squared (1 would be perfect prediction) / we cant compare r-squared if analysis on different sources (like here)
+
+summary(weight_lm_all) 
 ```
 The probability (p-values) of seeing the t-values under the null hypothesis are very small. Therefore the null hypothesis is rejected in all three models for both coefficients, i.e. the both coefficients are significantly different from zero.  
 
@@ -222,9 +225,19 @@ conf_50
 #   and compare the confidence intervals: 
 #   Explain the influence of sample size on the size of the interval
 
+# take a sample of 100 points 
+weight_df_m_100 <- weight_df_m[sample(1:no_of_rows, 100),]
 
+# build the linear model
+weight_lm_m_100 <- lm(Weight ~ Height, data = weight_df_m_100)
+
+# look at the confidence interval
+conf_100 <- confint(weight_lm_m_100)
+conf_100
+
+# NOTE= If we take bigger sample our height 2.5% - 97,5 % interval becomes smaller, the better the prediction.
+# More data is always better, (leave some data for training purposes).
 ```
-
 
 ### Exercise 1.4b
 ```{r}
@@ -287,15 +300,21 @@ coef_f
 ### Exercise 1.5c
 ```{r}
 predict(weight_lm_m, data.frame(Height=c(160, 170)))
+# NOTE = Put two values height 160 and 170
 
 # TASK: the same for women
+predict(weight_lm_f, data.frame(Height=c(160, 170)))
 
 ```
 
 ### Exercise 1.5d
 ```{r}
 predict(weight_lm_f, data.frame(Height=c(160, 170)), interval = "prediction")
+# NOTE = Prediction is  
+  # Second row = 170 and predict(fit/average) and real numbers are between lwr and upr
 predict(weight_lm_f, data.frame(Height=c(160, 170)), interval = "confidence")
+# NOTE = Confidence is the grey area around the line. 
+  # First row = 160 and predict(fit/average) and average between lwr(lower) and upr(upper) for 95%
 
 # TASK: the same for men and compare
 
@@ -306,8 +325,11 @@ As with any confidence or prediction interval, its width depends on the chosen c
 ### Exercise 1.6a
 ```{r}
 # TASK: complete
-weight_lm_gender <- lm(...)
+weight_lm_gender <- lm(Weight - Height + Gender, data = weight_df)
 summary(weight_lm_gender)
+# NOTE = Height (Estimate) Steigung. Jeden "schritt" den sich die Height erhöht um so viel erhöht sich die Weight
+# GenderMale (Estimate) Steigung. Male = 1 und Female = 0, Wenn Gender Male dann addieren wir 1* 8.08 hinzu. Wenn Female dann 0*8.08.
+# Wenn man Male ist dann ist man im Schnitt 8.08 Schwerer. (Diese Aussage darf man nicht treffen, da beide Daten (Height und GenderMale) eine starke korrelation haben)
 ```
 
 ### Exercise 1.6b

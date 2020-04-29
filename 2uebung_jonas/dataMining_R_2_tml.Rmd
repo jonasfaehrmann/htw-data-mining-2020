@@ -112,9 +112,13 @@ cor(mietspiegel$nm, mietspiegel$rooms, method = c("spearman"))
 cor(mietspiegel$nm, mietspiegel$badextra , method = c("pearson"))
 cor(mietspiegel$nm, mietspiegel$badextra, method = c("kendall")) # you want this one 
 cor(mietspiegel$nm, mietspiegel$badextra, method = c("spearman")) # or this one
+# kendall, spearmann Rangkorrelation!
 
 ggplot(mietspiegel, aes(x=badextra, y=nm, group=badextra)) + # or this one
   geom_boxplot()
+
+# NOTE= Better way to check for the correlation between the indicators (Merkmalen). 
+# In real-world we have correlations up to 0.7, usually not higher
 ```
 
 
@@ -125,6 +129,8 @@ d) Build a multiple linear regression model `miet_lm` with `nm` (*Nettomiete*) a
 # note use of the dot operator `.` representing all remaining variables
 mietspiegel_lm <- lm(nm ~ ., data = mietspiegel)
 summary(mietspiegel_lm)
+
+# NOTE= Netto miete muss rausgenommen werden weil Werte zu perfekt
 ```
 Explore the meaning of the R output above.
 i) the residuals
@@ -164,5 +170,4 @@ summary(mietspiegel_lm3)
 Compare the quality of this model with the one using the original column `bez`.
 
 ### Exercise 2.3
-
-
+# nqpm:wfl = nqpm * wfl as Merkmal 
