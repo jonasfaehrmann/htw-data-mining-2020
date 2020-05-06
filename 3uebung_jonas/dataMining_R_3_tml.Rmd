@@ -1,0 +1,111 @@
+---
+title: Exercise Sheet 3 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d %B %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+This exercise is about logistic regression. Please install the library `ISLR` that contains data sets for the book *An Introduction to Statistical Learning* by James, Witten, Hastie and Tibshirani. We are interested in predicting if a person defaults (goes bankrupt) based on their bank account balance, their income and their status (student or not).   
+
+For plotting, please again refer to the [Cookbook for R](http://www.cookbook-r.com/Graphs/). 
+
+## Exercise 3.1
+
+a) Load the libraries `ISLR` and `caret` and explore the data set `Default` used in the lecture. 
+    ```{r}
+    library(ISLR)
+    library(caret)
+    ```
+
+b) Plot *default* against the other variables (*income*, *balance* and *student*) to see if you can spot dependencies between the variables. 
+
+c) Explore how to use colour to distinguish data points with *default = yes* from *default = no*. Also look at *facets* in *ggplot* and other ways to visualise three or more dimensions in one graphing canvas.
+
+## Exercise 3.2
+
+a) Build a logistic regression model to predict *default* from *balance*. The basic function is
+    ```{r}
+    model <- glm(default ~ balance, data = Default, family = binomial)
+    ```
+
+    Explore the model using `summary()`.
+    
+b) Predict the probability of *default* for the entire data set. The basic function is
+    ```{r}
+    prediction <- predict(model, type = "response")
+    # NOTE= You can only use 1 or 0 and not the names
+    ```
+
+    Explore the values in `prediction` to get an understanding of what the prediction does. Add `prediction` as a column to the data frame `Default`.
+
+c) Write a function `classify(x, threshold)` that transforms a continuous value $x \in [0,1]$ into either 0 or 1 (boolean) based on a set threshold, i.e. if $x > \textit{threshold}$ then 1 else 0. Hint: Use the function `ifelse()` which allows vectors as an input $x$. 
+   
+   ```{r}
+   classify <- function(x, threshold) {
+     ifelse (x > threshold, 1, 0)
+     # loops in R are very slow therefore use ifelse instead
+   }
+   # NOTE=Some functions already do this for us
+   # How do we get the real answer from the percentage?
+   # If more than 50% (threshold) we say the person will become broke.
+   # 1 = true and 0 = false
+   ```
+
+d) Apply the function with *threshold* $= 0.5$ to the column `prediction` and add the result as a column `prediction_balance_0.5` to the data frame default. 
+
+e) Explore the differences between `prediction_balance_0.5` and the original value `default` using the following commands to produce a *confusion matrix*:  
+    ```{r, eval = FALSE}
+    # compute the confusion matrix (contingency table)
+    with(Default, table(prediction_balance_0.5, default))
+    ```
+    What do the numbers tell us? Count the number of data points where the prediction is accurate. 
+
+f) Change the threshold and rerun the analysis. Compare the results of using different thresholds. Observe how the values in the confusion matrix change.
+  
+  ```{r}
+  # NOTE= Je geringer t, desto mehr wird 1 predicted
+  ```
+
+## Exercise 3.3
+
+Re-do Exercise 3.2 with other models and compare the results (summary of the models and the confusion matrices). Which is the best model?
+
+a) Build a logistic regression model that predicts *default* from *student*. 
+
+b) Build a logistic regression model that predicts *default* from *student*, *balance* and *income*.  
+
+## Solutions
+
+### Exercise 3.1
+
+```{r}
+library(ggplot2)
+
+pairs(Default, col = Default$default)
+
+ggplot(Default, aes(balance,income)) + 
+  geom_point(aes(colour = default, fill = default), alpha=0.2)
+
+ggplot(Default, aes(balance,income)) + 
+  geom_point(aes(colour = default), alpha=0.2) + 
+  facet_grid(student~., labeller = label_both)
+
+# we use geom_jitter in the following two visualisations to avoid 
+# overplotting in favour of clarity
+ggplot(Default, aes(balance,default)) + 
+  #geom_point(aes(colour = default), alpha=0.2) +
+  geom_jitter(aes(colour = default), alpha=0.2, height = 0.3)
+
+ggplot(Default, aes(balance,default)) + 
+  #geom_point(aes(colour = default), alpha=0.2) + 
+  geom_jitter(aes(colour = default), alpha=0.2, height = 0.3) +
+  facet_grid(student~., labeller = label_both)
+
+ggplot(Default, aes(default,balance)) + 
+  geom_boxplot(aes(colour = default), alpha=0.2)
+```
+
