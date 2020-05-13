@@ -39,6 +39,7 @@ Follow the script below to build and assess a logistic regression model that pre
 ```{r}
 # build the model
 fit <- glm(default~balance, data=Default, family=binomial)
+# NOTE= Example from the lecture. Does someone go broke
 
 # predict the class probabilities
 props <- predict(fit, type="response")
@@ -52,17 +53,36 @@ classify <- function(x, threshold) {
 actuals <- ifelse(Default$default == "Yes", 1, 0)
 
 threshold <- 0.5
+# NOTE= You might want to change the threshold to reduce the errors.
 
 predicted <- classify(props,threshold)
 
 # specify "1" as the positive class for the performance measures
 confusionMatrix(factor(predicted), factor(actuals), positive = "1")
 
+# NOTE= Relevant data below!
+# NOTE= zeilen= vorhersage des modells, spalten= echter wert
+# NOTE= Die meisten sind richtig = 9625
+# NOTE= Accuracy = Richtige Fälle / Alle Fälle
+# NOTE= Sensitivity 
+# NOTE= Specificity
+# NOTE= 1 - Balanced Accuracy = Balance Classification rate
 ```
 
 ## Exercise 4.2
 
 Re-do Exercise 4.1, but change the classification threshold to 0.2 and 0.8. Compare the confusion matrices and the performance measures. Explain the differences in the confusion matrix and figure out, how increasing/decreasing the threshold influences the performance measures (accuracy, true/false positive/negative rate).
+
+```{r}
+threshold <- 0.2
+predicted <- classify(props,threshold)
+confusionMatrix(factor(predicted), factor(actuals), positive = "1")
+# NOTE= Threshold lower then we get more 1s
+
+threshold <- 0.8
+predicted <- classify(props,threshold)
+confusionMatrix(factor(predicted), factor(actuals), positive = "1")
+```
 
 ## Exercise 4.3
 
@@ -77,6 +97,7 @@ perf_rocr <- performance(pred_rocr, "tpr", "fpr" )
 # plot the ROC curve
 plot(perf_rocr, col="blue", title="ROC curve")
 abline(0,1)
+# NOTE= The bigger the area under the curve the better the model
 
 # The plotted values and associated threshold can be extracted 
 # as vectors from the performance object 
@@ -86,6 +107,7 @@ threshold_rocr <- perf_rocr@alpha.values[[1]]
 
 # calculate and extract the value for the area under the curve (AUC)
 performance(pred_rocr, "auc")@y.values
+# NOTE= Use this value to compare to other models. Higher is better
 
 ```
 
@@ -96,8 +118,18 @@ a) Assign cost values to false positives (FP) and false negatives (FN) as well a
 
 b) Define a function `cost(prediction, actuals, threshold, cost_fp, cost_fn, cost_tp, cost_tn)` to simplify the comparison in a). Estimate which value for the classification threshold minimises the cost. 
 
+```{r}
+# NOTE= In the real world it is difficult to increase the models accuracy. By for example changing the threshold
+# NOTE= Solution: You have to think about what the real worl impact is (If the prediction is too late we might loose the money (this example))
+# NOTE= Solution: If we predict someone to become broke but he wont (We might loose this customer, might contact the news)
 
+
+# NOTE= Code postet by lecturer. We see that costs rise the lower the threshold
+```
 ## Exercise 4.5
 
 Re-do all the steps from Exercises 4.1-4.4, but this time use all attributes in the data set `Default` to predict the column `default`. What is the difference in performance?
 
+```{r}
+# NOTE= Does more data result in lower costs?
+```
