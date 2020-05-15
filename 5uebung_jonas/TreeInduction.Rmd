@@ -1,0 +1,211 @@
+---
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Induction of Regression and Decision Trees 
+## Feature selection for the first split
+
+Martin Spott, Data Mining, Wirtschaftsinformatik, HTW Berlin  
+last revision: 
+`r format(Sys.Date(), format='%d %B %Y')`
+
+
+## Regression Tree Induction
+
+We want to predict the rent of a flat based on the quality of the area *(goodArea: 0=no, 1=yes)* and the size of the flat (*size: 0=small, 1=large)* based on a small data set:
+
+```{r}
+# generate data
+library(knitr)
+options(scipen=999) # disable scientific notation for printing numbers
+set.seed(10)
+
+goodArea <- c(0,0,0,0,1,1,1,1)
+size <- c(0,1,0,1,0,1,0,1)
+
+# generate random data for each data set (runif = generate 8 values with min 380 and max 420)
+rent <- floor(runif(8, 380, 420) + goodArea * runif(8, 50, 100) 
+              + size * runif(8, 100, 200))
+
+# data table just for viewing
+rentData <- data.frame(goodArea, size, rent)
+kable(rentData)
+```
+
+As a baseline, we just the average rent as a prediction and check the residual sum of squares (RSS) as error measure.
+
+```{r}
+mean(rent)
+rss_all <- sum((rent - mean(rent))^2) 
+rss_all
+```
+
+We split the data set on each of the features *goodArea* and *size* and compare the RSS. The split with the lower RSS is the better one.
+
+```{r}
+# split on goodArea
+# prediction for goodArea=0
+p_area0 <- mean(rent[goodArea == 0])
+p_area0
+# prediction for goodArea=1
+p_area1 <- mean(rent[goodArea == 1])
+p_area1
+
+# RSS when splitting on goodArea
+rss_area <- sum((rent[goodArea == 0] - p_area0)^2) + 
+              sum((rent[goodArea == 1] - p_area1)^2)
+rss_area
+
+# split on size
+# prediction for size=0
+p_size0 <- mean(rent[size == 0])
+p_size0
+# prediction for size=1
+p_size1 <- mean(rent[size == 1])
+p_size1
+
+# RSS when splitting on size
+rss_size <- sum((rent[size == 0] - p_size0)^2) + 
+              sum((rent[size == 1] - p_size1)^2)
+rss_size
+
+# NOTE = RSS for size is smaller and therefore better
+```
+
+Since $`r rss_size` = rss\_size < rss\_area = `r rss_area`$, split by feature *size* first. We can also see that both features improve on the baseline RSS of `r rss_all`.  
+
+\pagebreak
+
+## Decision Tree Induction
+
+We add a class *want_it* to the data frame that describes if we want to buy such a flat (1) or not (0). 
+
+```{r}
+rentData$want_it <- ifelse(rent > 450, 1, 0) # 1: I want it, 0: not interested
+# view data
+kable(rentData[,c(1,2,4)])  
+```
+
+As for a regression tree, we split the data set on each of the features *goodArea* and *size*, but this time compare the *Gini impurity* of the two splits. The split with the lower impurity is better. 
+
+Let us first compute the Gini impurity of *want_it* in the entire data set. 
+```{r}
+#   P(want_it = 0) = 3/8, P(want_it = 1) = 5/8 
+gini_all <- 3/8 * (1 - 3/8) + 5/8 * (1 - 5/8) 
+gini_all
+```
+
+Now compute the Gini impurities for the two splits. 
+```{r}
+# split on goodArea
+
+# Gini impurity for goodArea == 0: 
+#   P(want_it = 0 | goodArea = 0) = P(want_it = 1  | goodArea = 0) = 1/2 
+gini_gA0 <- 1/2 * (1 - 1/2) + 1/2 * (1 - 1/2) 
+gini_gA0
+
+# Gini impurity for goodArea == 1: 
+#   P(want_it = 0 | goodArea = 1) = 1/4, P(want_it = 1 | goodArea = 1) = 3/4 
+gini_gA1 <- 1/4 * (1 - 1/4) + 3/4 * (1 - 3/4) 
+gini_gA1
+
+# compute Gini impurity for split on goodArea
+# weighted average, both goodArea = 1 and goodArea = 0 have 4 data points out of 8
+gini_gA <- 4/8 * gini_gA0 + 4/8 * gini_gA1
+gini_gA
+
+# split on size
+
+# Gini impurity for size == 0: 
+#   P(want_it = 0 | size = 0) 3/4, P(want_it = 1 | size = 0) = 1/4 
+gini_s0 <- 3/4 * (1 - 3/4) + 1/4 * (1 - 1/4) 
+gini_s0
+
+# Gini impurity for size == 1: 
+#   P(want_it = 0 | size = 1) = 0, P(want_it = 1 | size = 1) = 1 
+gini_s1 <- 0 * (1 - 0) + 1 * (1 - 1) 
+gini_s1
+
+# compute Gini impurity for split on size
+# weighted average, both size = 1 and size = 0 have 4 data points out of 8
+gini_s <- 4/8 * gini_s0 + 4/8 * gini_s1
+gini_s
+```
+
+Gini impurity for split on *size* is smaller: $`r gini_s` = gini\_s < gini\_gA = `r gini_gA`$. Therefore we split on *size* first. As for the regression tree, both splits would give a better separation of the two classes than we find in the overall data set, since $gini\_all = `r gini_all`$ is larger than the other two. 
+
+\pagebreak
+
+## Classification Tree for the Iris Data Set
+
+```{r, warning=FALSE, message=FALSE}
+# Decision Trees
+data("iris")
+
+# plot iris data with class as colour
+pairs(iris[1:4], main = "Edgar Anderson's Iris Data", pch = 21, 
+      bg = c("red", "green3", "blue")[unclass(iris$Species)], lower.panel=NULL)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# summary information of iris data set
+summary(iris)
+
+# induce some trees
+# conditional inference tree (http://www.rdatamining.com/examples/decision-tree)
+library(party)
+iris_ctree <- ctree(Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width, data=iris)
+print(iris_ctree)
+plot(iris_ctree)
+plot(iris_ctree, type="simple")
+
+# rpart
+library("rpart")
+library("rpart.plot")
+
+tree <- rpart(Species ~ ., data = iris, method = "class", 
+              control = rpart.control(maxdepth = 4, minsplit = 5))
+rpart.plot(tree)
+
+# tree
+library(tree)
+
+tree_iris <- tree(Species ~ ., data = iris)
+summary(tree_iris)
+plot(tree_iris)
+text(tree_iris, pretty=0)
+```
+
+### Gini impurity 
+
+*Gini impurity* is one of various measures used to evaluate, how good a feature is for the next split and how to split the range of values. Rather than just measuring the accuracy of the prediction by adding the split, Gini impurity measures how well a split separates the different classes. Predicting all classes with the same probability is the worst split (*most impure split*), the winning class having a probability of 1 and all others 0 is the best split (*purest split*).     
+
+```{r}
+
+# quadratic entropy (Gini impurity)
+# three classes with equal probability 
+3 * 1/3 * (1 - 1/3)
+
+# three classes with "one winner"
+.8 * (1 - .8) + .1 * (1 - .1) + .1 * (1 - .1) 
+
+# three classes with "one even stronger winner"
+.9 * (1 - .9) + .05 * (1 - .05) + .05 * (1 - .05) 
+
+# three classes with "one winner taking all"
+1 * (1 - 1) + 0 * (1 - 0) + 0 * (1 - 0) 
+
+# Compare Gini impurity and entropy values for binary classification
+x <- seq(0,1,0.001)
+plot(x, -x * log2(x) - (1-x) * log2(1-x), type="l", col="red", 
+     main="red: entropy, black: Gini impurity", xlab="p", ylab="measure value")
+lines(x, 2 * x * (1 - x))
+
+```
+
+*Entropy* is another measure giving similar results. 
+
+
