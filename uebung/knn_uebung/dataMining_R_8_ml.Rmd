@@ -1,0 +1,205 @@
+---
+title: "Exercise Sheet 8 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin"
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d %B %Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+This exercise is about learning k-Nearest-Neighbour classifiers and Support Vector Machines (SVMs). We will use the Iris data set.
+
+First load some libraries and attach the data.
+
+```{r, message=FALSE, warning=FALSE }
+# load some libraries; install first if necessary
+library(e1071) # for SVMs
+library(caret) # for learning control
+data("iris")
+```
+
+Some data preparation:
+```{r}
+# look at the Iris data set
+plot(iris, col=iris$Species)
+
+# test and training data sets
+n <- nrow(iris) 
+
+train_indices <- sample(1:n, round(2/3 * n))
+iris_train <- iris[train_indices,]
+iris_test <- iris[-train_indices,]
+
+# for illustration train on two input features only
+# pick two such that linear separation works well
+features <- c("Petal.Length", "Petal.Width")
+cols <- c(features, "Species")
+```
+
+## Exercise 8.1 (k-Nearest Neighbour)
+We use the library `caret` to implement a learner for k-nearest neighbour that finds the best value for k.
+
+```{r}
+set.seed(50)
+ctrl <- trainControl(method="cv", number = 3) # 3-fold cross validation 
+
+# tuneGrid contains the values for k which are tried
+knnfit <- train(Species ~ ., data = iris[, cols], method = "knn", trControl = ctrl, 
+                preProcess = c("center","scale"), 
+                tuneGrid = expand.grid(k=3:20)) # try k=3,4, ... 20
+
+#Output of kNN fit
+knnfit
+plot(knnfit)
+
+# predict the classes in the entire data set using the best model
+knnPredict <- predict(knnfit, newdata = iris[, cols] )
+
+# Get the confusion matrix to see accuracy value and other quality measures
+confusionMatrix(knnPredict, iris$Species)
+
+# use colour for original class and symbol for predicted class
+plot(iris[,features], col=iris$Species, pch=as.numeric(unclass(knnPredict)))
+
+```
+
+### Importance of Scaling
+Since the nearest neighbours are found using Euclidean distance (in this case), 
+it is important that the distances in the different features are comparable, i.e. on a similar scale. 
+
+```{r}
+# generate some data
+
+set.seed(100)
+x1 <- c(seq(1,1000,20), runif(100, min = 500, max = 600))
+x2 <- c(rep(1,50), runif(100, min = 5, max = 20))
+myclass <- factor(c(rep(1, 50), rep(2, 100)))
+plot(x1, x2, col=myclass)
+
+x <- cbind(x1, x2)
+pre_x <- preProcess(x, method=c("center", "scale"))
+x_n <- predict(pre_x, x)
+
+res <- knn3Train(x, x, myclass, k=5, prob = FALSE)
+
+plot(x1, x2, col=res)
+
+res_n <- knn3Train(x_n, x_n, myclass, k=5, prob = FALSE)
+
+plot(x_n[,1] , x_n[,2], col=res_n, xlab = "x1", ylab = "x2")
+
+```
+
+
+## Exercise 8.2 (Support Vector Machine)
+ 
+Split the data into training and test data set, learn a linear SVM and check the results in terms of accuracy and the confusion matrix. The cost parameter is related to the margin of the classifier. Each data point in the margin produces costs. The higher the cost the smaller the margin, i.e. the fewer data points lie in the margin. 
+ 
+
+
+```{r}
+
+# fit an SVM with linear kernel
+svmfit <- svm(Species ~ ., data = iris_train[,cols], kernel = "linear", 
+              cost = 1, scale = TRUE)
+
+# print the results
+print(svmfit)
+
+# more information about the model including the support vectors
+summary(svmfit)
+
+# indices of the support vectors
+svmfit$index
+
+# plot it including the separation lines (hyperplanes)
+plot(svmfit, iris_train[,cols])
+
+# predict on the test data set
+prediction <- predict(svmfit, iris_test, type = "class")
+
+# confusion matrix with quality measures
+confusionMatrix(prediction, iris_test[,"Species"])
+
+
+```
+
+## Exercise 8.3 (Support Vector Machine )
+
+We would like to find the best value for the cost parameter using cross validation. We can use the function `tune()` in the library `e1071`. Alternatively, the package `caret` can be used as with kNN above, but we then may have to choose a different implementation of an SVM supported by `caret`.
+
+```{r}
+# function to find the best value for the cost parameter
+# assume a column called Species in my_data representing the class to be predicted
+run_iris_svm <- function(my_data, svm_type) {
+
+    # automatically run five-fold cross validation to find the best value for cost
+    # all the code related to the parameter gamma should be ignored by the functions 
+    # if svm_type = "linear", since a linear kernel only requires cost
+    tuned_svm <- tune(svm, Species ~ ., data = my_data, kernel = svm_type, 
+              scale = TRUE, ranges = list(cost = c(0.01, 0.1, 1, 10, 100), 
+                                          gamma = c(0.25, 0.5, 1, 2)), 
+              tunecontrol = tune.control(cross=5))
+    print(tuned_svm)
+    
+    # train on the entire data set using best value for cost
+    best_cost <- tuned_svm$best.parameters[1]
+    best_gamma <- tuned_svm$best.parameters[2] 
+
+        
+    svmfit_best <- svm(Species ~ ., data = my_data, kernel = svm_type, 
+                  cost = best_cost, gamma = best_gamma, scale = TRUE)
+    
+    # plot the result
+    plot(svmfit_best, my_data)    
+    
+    # confusion matrix with quality measures
+    print(confusionMatrix(svmfit_best$fitted, my_data[,"Species"]))
+    
+}
+
+# learn a linear SVM
+run_iris_svm(iris[,cols], "linear")
+
+# learn an SVM with a radial basis function kernel
+# radial requires a value for the parameter gamma
+# which should be optimised as well; we just go for the default here
+run_iris_svm(iris[,cols], "radial")  
+
+```
+
+## Exercise 8.4
+
+Join the classes *setosa* and *virginica* in a new class *setosa_virginica* and learn a classifier to separate it from *versicolor*. This cannot be achieved by linear separation.
+
+```{r}
+iris2 <- iris
+iris2$Species <- as.factor(ifelse(iris2$Species=="versicolor", "versicolor", 
+                                  "setosa_virginica"))
+
+plot(iris2[,features], col=iris2$Species)
+
+
+# linear separation must fail
+run_iris_svm(iris2[,cols], "linear")  
+```
+
+As expected, linear separation fails and all cases are assigned to the same class, i.e. the majority class *setosa_virginica*.
+
+
+```{r}
+# radial kernel works nicely
+run_iris_svm(iris2[,cols], "radial")  
+```
+
+## Exercise 8.5
+
+Re-run Exercises 1 and 2 with two different features like `Sepal.Length` and `Sepal.Width` that do not allow a linear separation. See, how kNN and SVMs perform. Finally, use all four features. 
+
+
+
