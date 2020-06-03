@@ -49,6 +49,7 @@ set.seed(50)
 ctrl <- trainControl(method="cv", number = 3) # 3-fold cross validation 
 
 # tuneGrid contains the values for k which are tried
+# Note: We need to figure out the best k(Hyperparameter) with cross validation
 knnfit <- train(Species ~ ., data = iris[, cols], method = "knn", trControl = ctrl, 
                 preProcess = c("center","scale"), 
                 tuneGrid = expand.grid(k=3:20)) # try k=3,4, ... 20
@@ -56,6 +57,10 @@ knnfit <- train(Species ~ ., data = iris[, cols], method = "knn", trControl = ct
 #Output of kNN fit
 knnfit
 plot(knnfit)
+# Note: Which model do we use? We use the model 15 because the model is the most easy.
+# Reason: Good accuracy and least possiblity to overfit (Neighbors)!
+# We could also use the 8 or 10 e.g. because this might get a better fit
+# Most definately we do not take the 5 because there is a high probability to overfit!
 
 # predict the classes in the entire data set using the best model
 knnPredict <- predict(knnfit, newdata = iris[, cols] )
@@ -88,6 +93,8 @@ x_n <- predict(pre_x, x)
 res <- knn3Train(x, x, myclass, k=5, prob = FALSE)
 
 plot(x1, x2, col=res)
+# Note: Why did the model identify the bottom 6 circles as red?
+# This is due to the axis definition! We were tricked!
 
 res_n <- knn3Train(x_n, x_n, myclass, k=5, prob = FALSE)
 
