@@ -1,0 +1,125 @@
+---
+title: Exercise Sheet 9 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d %B %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This exercise is about clustering data using c-means (k-means) and agglomerative clustering. We will use the Iris data set. Please note that you normally do not have class labels as in the Iris data set, but you simply want to group data points.  
+
+First load some libraries and attach the data.
+
+```{r, message=FALSE, warning=FALSE }
+# load libraries and data; install first if necessary
+library(mclust)
+data("iris")
+```
+
+Visualise the data.
+```{r}
+# look at the Iris data set with and without class information
+plot(iris, col=iris$Species)
+plot(iris)
+```
+
+## Exercise 9.1 (Agglomerative/Hierarchical Clustering)
+
+We use the function `hclust()`. The function `dist()` produces a matrix with pairwise distances between the 150 flowers in the Iris data set, which is a required input to `hclust()`. 
+
+a) Basic clustering
+    ```{r}
+    hc <- hclust(dist(iris[,1:4]), method="average")
+    plot(hc, hang = -1, labels=iris$Species, cex=.9)
+    # Setosa left (very good split)
+    # virginica middle
+    # Versicolor right
+    ```
+
+    The plot shows the hierarchy of clusters (best viewed large). 
+
+b) The function `cutree(..., h)` cuts the tree after `h` agglomeration steps, i.e. produces `h` clusters. It shows the cluster number for every row in the data. With the Iris data set, you can compare the cluster numbers with the original class `iris$Species`. Please note that this is generally not possible since you do not know the class. 
+
+    ```{r}
+    cutree(hc, 3)
+    # We cut the tree which was displayed above on its y axis. 3 = 2 clusters, 2 = 3 clusters
+    ```
+c) Vary the value of `h` to see how the clustering changes. 
+
+d) Vary `method = "..."` in `hclust()` to change the cluster distance measure (e.g. "single", "complete", "average", "ward.D2"). Compare the results.
+
+e) Run the following code segment outside the RMarkdown file. It allows to interactively cut the dendogram and prints the class labels in the console as shown in the lecture. 
+
+    ```{r, eval=FALSE}
+    # hierarchical (agglomerative clustering)
+    # interactive demo from help page (?hclust and ?identify.hclust)
+    require(graphics)
+    
+    hci <- hclust(dist(iris[,1:4]), method="average")
+    plot(hci, hang = -1, labels=iris$Species)
+    identify(hci, function(k) print(table(iris[k,5])))
+    
+    ```
+    
+    
+## Exercise 9.2 (k-Means)
+
+We use the function `kmeans()`. The argument `nstart = m` instructs `kmeans` to run `m` times with different initialisations. It will return the clustering with the smallest within-cluster variance.  
+
+```{r}
+# run kmeans
+kc <- kmeans(iris[,1:4], 3, nstart = 20)
+table(iris$Species, kc$cluster)
+# nstart = times of runs (we do this because we want the most accurate. The result will vary and the variance will be checked to determine the best (minimize within cluster variance))
+```
+
+The table shows a confusion matrix, which compares the clusters to the original classes. As said above, we normally cannot do this since we generally do not know the class. 
+
+We can plot the results. Colour denotes the cluster, the shape is the original class.  
+
+```{r}
+# plot results in two-dimensional subspace
+# colour by found clusters
+plot(iris[c("Petal.Length", "Petal.Width")], pch = unclass(iris$Species), 
+     col = kc$cluster,  main = "k-means clustering")
+points(kc$centers[,c("Petal.Length", "Petal.Width")], col = 1:3, pch = 8, cex=2)
+```
+
+Since k-Means is very sensitive to scaling, use `scale()` to center all columns around zero with standard deviation of one. 
+
+```{r}
+iris_s <- scale(iris[,1:4])
+# Scale to make the wertebereich equally big
+kc_s <- kmeans(iris_s, 3, nstart = 20)
+
+plot(iris_s[,3:4], pch = unclass(iris$Species), col = kc_s$cluster,  
+     main = "k-means clustering")
+points(kc_s$centers[,3:4], col = 1:3, pch = 8, cex=2)
+# The plot looks like the clusters overlap but they do not. It is because 4dimensions are plotted on 2d! In 4d it is correct
+
+```
+
+In the two-dimensional plot it still appears even after scaling that some points seem closest to the wrong cluster centre, but this is a consequence of reducing the four-dimensional data to two dimensions. You can re-try to cluster a two-dimensional subset of the Iris data to see the effect of scaling.  
+
+You can gather more information about the cluster model using
+```{r}
+kc
+```
+
+We re-run k-Means with different values for `k` (number of clusters). Observe the values for `kc$tot.withinss` (proportional to within-cluster variance) for each `k` in the plot. 
+
+
+```{r}
+total_withinss <- c()
+for (i in 1:10) {
+  total_withinss <- c(total_withinss, kmeans(iris_s, i, nstart = 20)$tot.withinss)
+}
+plot(1:10, total_withinss, xlab = "number of clusters", ylab = "within-cluster variance", 
+     type = "o")
+
+```
+
+We want to minimise the within-cluster variance, but not too much, since the minimal value is achieved when every point is a cluster. We therefore pick an elbow point in the plot, where the slope changes from steep to flat, which is around $k = 3$ in the plot. Since for $k > 3$ the within-cluster variance does not decrease a lot anymore, adding more clusters makes the clustering unnecessarily fine-grained without gaining much.
