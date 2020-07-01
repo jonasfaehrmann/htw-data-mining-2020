@@ -1,0 +1,122 @@
+---
+title: Exercise Sheet 10 -- Data Mining <BR> Wirtschaftsinformatik, HTW Berlin
+author: "Martin Spott"
+date: "last revision `r format(Sys.Date(), format='%d %B %Y')`"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This exercise is about Principal Components Analysis (PCA) which finds an orthonormal base for the feature space of data. The first base vector is oriented towards the direction of highest variance, the second one is the vector orthogonal to the first vector with highest variance and so on. 
+
+First load some libraries (install beforehand if necessary) and attach the data.
+```{r, eval=FALSE}
+# run this to install libraries straight from github
+# install devtools first if necessary
+library(devtools)
+# install ggbiplot from github
+#install_github("vqv/ggbiplot")
+```
+
+```{r, message=FALSE, warning=FALSE }
+# load libraries and data
+library(ggbiplot)
+data("iris")
+```
+
+## Exercise 10.1 
+
+Please work through the exercise
+ 
+*10.4 Lab 1: Principal Components Analysis*
+
+in the book *An Introduction to Statistical Learning with Applications in R* by G. James, D. Witten, T. Hastie, R. Tibshirani (see http://www-bcf.usc.edu/~gareth/ISL/).
+
+## Exercise 10.2
+
+Use PCA on the Iris data set as discussed in the lecture.  
+
+a) Visualise the data.
+    ```{r}
+    # Scale the data for better comparison with PCA visualisation
+    iris_s <- as.data.frame(scale(iris[,1:4]))
+    # look at the Iris data set with and without class information
+    
+    plot(iris_s, col=iris$Species)
+    plot(iris_s)
+    ```
+
+\newpage
+
+b) Compute the PCA with `scale = TRUE` and discuss the results following Exercise 10.1.
+
+    ```{r}
+    iris_pca <- prcomp(iris[,1:4], scale = TRUE)
+    
+    # look at the result of the PCA
+    print(iris_pca)
+
+    # elements of the PCA object in R
+    names(iris_pca)
+
+    # the data has been normalised (scaled)
+    iris_pca$center     # the mean values of the features
+    iris_pca$scale      # 1 / standard deviation of features
+    iris_pca$rotation   # the loadings
+    ```
+
+c) Produce a biplot following the code in Exercise 10.1. Use the following code for a better visualisation of the biplot using `ggbiplot()` in the library of the same name. 
+    ```{r}
+    # standard biplot in R
+    biplot(iris_pca, scale = 0)
+    
+    # nicer biplot with ggplot2
+    g <- ggbiplot(iris_pca, scale = 0, 
+                  groups = iris$Species, ellipse = TRUE, 
+                  circle = TRUE)
+    g <- g + scale_color_discrete(name = '')
+    g <- g + theme(legend.direction = 'horizontal', 
+                   legend.position = 'top')
+    print(g)
+    ```
+    
+    Interpret the visualisation. 
+    
+d) Generate the scree plots for the percentage of variance explained by the principal components (normal and cumulative). 
+# Not necessary!!!!!!!
+    ```{r}
+    # summary gives us information 
+    #   about the percentage of variance explained
+    summary(iris_pca)
+
+    # compute variances and variance explained by hand
+    iris_pca.var <- iris_pca$sdev^2
+    iris_pca.var
+    iris_pca.ve <- iris_pca.var / sum(iris_pca.var)
+    iris_pca.ve
+
+    # scree plots of variance explained by number of principal components
+    plot(iris_pca.ve, xlab="Principal Component", 
+         ylab="Proportion of   Variance Explained ", 
+         ylim=c(0,1),type='b')
+    plot(cumsum(iris_pca.ve), xlab="Principal Component ", 
+         ylab=" Cumulative Proportion of Variance Explained ", 
+         ylim=c(0,1), type='b')
+ 
+    # same with ggplot
+    # proportion of variance explained
+    print(ggscreeplot(iris_pca, type = "pev"))
+
+    # cumulative proportion
+    print(ggscreeplot(iris_pca, type = "cev"))
+  
+    ```
+
+
+## Exercise 10.3 
+
+Train a classification model like a decision tree on the PCA-version of the Iris data set. Compare the results (performance) with a similar model trained on the original data set. 
+
