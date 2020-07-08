@@ -6,3 +6,4 @@ pip install sklearn
 pip install lightgbm
 pip install xgboost
 pip install mlxtend
+pip install openpyxl
