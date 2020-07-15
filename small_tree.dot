@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="rounded", color="black", fontname=helvetica] ;
+edge [fontname=helvetica] ;
+0 [label="price_in_eur <= 110.7\nmse = 2474.6\nsamples = 35323\nvalue = 66.4"] ;
+1 [label="price_in_eur <= 59.1\nmse = 667.9\nsamples = 27090\nvalue = 45.8"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="price_in_eur <= 35.7\nmse = 235.6\nsamples = 15625\nvalue = 31.1"] ;
+1 -> 2 ;
+3 [label="mse = 78.5\nsamples = 7514\nvalue = 21.7"] ;
+2 -> 3 ;
+4 [label="mse = 223.5\nsamples = 8111\nvalue = 39.8"] ;
+2 -> 4 ;
+5 [label="price_in_eur <= 81.2\nmse = 557.1\nsamples = 11465\nvalue = 66.0"] ;
+1 -> 5 ;
+6 [label="mse = 340.6\nsamples = 5165\nvalue = 56.0"] ;
+5 -> 6 ;
+7 [label="mse = 582.8\nsamples = 6300\nvalue = 74.3"] ;
+5 -> 7 ;
+8 [label="price_in_eur <= 174.6\nmse = 2360.9\nsamples = 8233\nvalue = 134.8"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label="price_in_eur <= 131.4\nmse = 1123.3\nsamples = 5011\nvalue = 113.0"] ;
+8 -> 9 ;
+10 [label="mse = 795.9\nsamples = 2249\nvalue = 99.3"] ;
+9 -> 10 ;
+11 [label="mse = 1113.2\nsamples = 2762\nvalue = 124.1"] ;
+9 -> 11 ;
+12 [label="Duration_Time <= 164.5\nmse = 2387.3\nsamples = 3222\nvalue = 169.0"] ;
+8 -> 12 ;
+13 [label="mse = 2119.1\nsamples = 1297\nvalue = 197.1"] ;
+12 -> 13 ;
+14 [label="mse = 1677.2\nsamples = 1925\nvalue = 150.0"] ;
+12 -> 14 ;
+}
